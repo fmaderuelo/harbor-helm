@@ -4,9 +4,7 @@ expose:
   # in the corresponding section
   type: ingress
   tls:
-    # Enable the tls or not.
-    # Delete the "ssl-redirect" annotations in "expose.ingress.annotations" when TLS is disabled and "expose.type" is "ingress"
-    # Note: if the "expose.type" is "ingress" and the tls
+    # Enable the tls or not. Note: if the type is "ingress" and the tls
     # is disabled, the port must be included in the command when pull/push
     # images. Refer to https://github.com/goharbor/harbor/issues/5291
     # for the detail.
@@ -35,20 +33,19 @@ expose:
       notarySecretName: ""
   ingress:
     hosts:
-      core: core.harbor.domain
-      notary: notary.harbor.domain
+      core: harbor.10.61.100.30.xip.io
+      notary: notary.10.61.100.30.xip.io
     # set to the type of ingress controller if it has specific requirements.
     # leave as `default` for most ingress controllers.
     # set to `gce` if using the GCE ingress controller
     # set to `ncp` if using the NCP (NSX-T Container Plugin) ingress controller
     controller: default
     annotations:
-      # note different ingress controllers may require a different ssl-redirect annotation
-      # for Envoy, use ingress.kubernetes.io/force-ssl-redirect: "true" and remove the nginx lines below
       ingress.kubernetes.io/ssl-redirect: "true"
       ingress.kubernetes.io/proxy-body-size: "0"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    ingressClassName: nginx
   clusterIP:
     # The name of ClusterIP service
     name: harbor
@@ -109,7 +106,7 @@ expose:
 # the IP address of k8s node
 #
 # If Harbor is deployed behind the proxy, set it as the URL of proxy
-externalURL: https://core.harbor.domain
+externalURL: https://harbor.10.61.100.30.xip.io
 
 # The internal TLS used for harbor components secure communicating. In order to enable https
 # in each components tls cert files need to provided in advance.
@@ -163,6 +160,14 @@ internalTLS:
     crt: ""
     # Content of chartmuseum's TLS key file, only available when `certSource` is "manual"
     key: ""
+  # clair related cert configuration
+  clair:
+    # secret name for clair's tls certs
+    secretName: ""
+    # Content of clair's TLS key file, only available when `certSource` is "manual"
+    crt: ""
+    # Content of clair's TLS key file, only available when `certSource` is "manual"
+    key: ""
   # trivy related cert configuration
   trivy:
     # secret name for trivy's tls certs
@@ -197,13 +202,13 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
     chartmuseum:
       existingClaim: ""
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
     jobservice:
       existingClaim: ""
       storageClass: ""
@@ -217,7 +222,7 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 2Gi
     # If external Redis is used, the following settings for Redis will
     # be ignored
     redis:
@@ -225,13 +230,13 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 2Gi
     trivy:
       existingClaim: ""
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
   # Define which storage backend is used for registry and chartmuseum to store
   # images and charts. Refer to
   # https://github.com/docker/distribution/blob/master/docs/configuration.md#storage
@@ -344,7 +349,7 @@ caSecretName: ""
 # The secret key used for encryption. Must be a string of 16 chars.
 secretKey: "not-a-secure-key"
 
-# The proxy settings for updating trivy vulnerabilities from the Internet and replicating
+# The proxy settings for updating clair vulnerabilities from the Internet and replicating
 # artifacts from/to the registries that cannot be reached directly
 proxy:
   httpProxy:
@@ -353,10 +358,11 @@ proxy:
   components:
     - core
     - jobservice
+    - clair
     - trivy
 
 # The custom ca bundle secret, the secret must contain key named "ca.crt"
-# which will be injected into the trust store for chartmuseum, core, jobservice, registry, trivy components
+# which will be injected into the trust store for chartmuseum, clair, core, jobservice, registry, trivy components
 # caBundleSecretName: ""
 
 ## UAA Authentication Options
@@ -410,7 +416,6 @@ core:
   replicas: 1
   ## Startup probe values
   startupProbe:
-    enabled: true
     initialDelaySeconds: 10
   # resources:
   #  requests:
@@ -444,11 +449,7 @@ jobservice:
   serviceAccountName: ""
   maxJobWorkers: 10
   # The logger for jobs: "file", "database" or "stdout"
-  jobLoggers:
-    - file
-    # - database
-    # - stdout
-
+  jobLogger: file
   # resources:
   #   requests:
   #     memory: 256Mi
@@ -536,6 +537,36 @@ chartmuseum:
   ## Additional deployment annotations
   podAnnotations: {}
 
+clair:
+  enabled: true
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
+  clair:
+    image:
+      repository: goharbor/clair-photon
+      tag: dev
+    # resources:
+    #  requests:
+    #    memory: 256Mi
+    #    cpu: 100m
+  adapter:
+    image:
+      repository: goharbor/clair-adapter-photon
+      tag: dev
+    # resources:
+    #  requests:
+    #    memory: 256Mi
+    #    cpu: 100m
+  replicas: 1
+  # The interval of clair updaters, the unit is hour, set to 0 to
+  # disable the updaters
+  updatersInterval: 12
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
+
 trivy:
   # enabled the flag to enable Trivy scanner
   enabled: true
@@ -606,11 +637,6 @@ notary:
     #  requests:
     #    memory: 256Mi
     #    cpu: 100m
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    ## Additional deployment annotations
-    podAnnotations: {}
   signer:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
@@ -622,11 +648,11 @@ notary:
     #  requests:
     #    memory: 256Mi
     #    cpu: 100m
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    ## Additional deployment annotations
-    podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ## Additional deployment annotations
+  podAnnotations: {}
   # Fill the name of a kubernetes secret if you want to use your own
   # TLS certificate authority, certificate and private key for notary
   # communications.
@@ -660,6 +686,7 @@ database:
     username: "user"
     password: "password"
     coreDatabase: "registry"
+    clairDatabase: "clair"
     notaryServerDatabase: "notary_server"
     notarySignerDatabase: "notary_signer"
     # "disable" - No SSL
@@ -710,37 +737,8 @@ redis:
     jobserviceDatabaseIndex: "1"
     registryDatabaseIndex: "2"
     chartmuseumDatabaseIndex: "3"
+    clairAdapterIndex: "4"
     trivyAdapterIndex: "5"
     password: ""
   ## Additional deployment annotations
   podAnnotations: {}
-
-exporter:
-    replicas: 1
-  # resources:
-  #  requests:
-  #    memory: 256Mi
-  #    cpu: 100m
-    podAnnotations: {}
-    serviceAccountName: ""
-    image:
-      repository: goharbor/harbor-exporter
-      tag: dev
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    cacheDuration: 30
-    cacheCleanInterval: 14400
-
-metrics:
-  enabled: false
-  core:
-    path: /metrics
-    port: 8001
-  registry:
-    path: /metrics
-    port: 8001
-  exporter:
-    path: /metrics
-    port: 8001
-
