@@ -33,8 +33,8 @@ expose:
       notarySecretName: ""
   ingress:
     hosts:
-      core: core.harbor.domain
-      notary: notary.harbor.domain
+      core: harbor.10.61.100.30.xip.io
+      notary: notary.10.61.100.30.xip.io
     # set to the type of ingress controller if it has specific requirements.
     # leave as `default` for most ingress controllers.
     # set to `gce` if using the GCE ingress controller
@@ -45,6 +45,7 @@ expose:
       ingress.kubernetes.io/proxy-body-size: "0"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    ingressClassName: nginx
   clusterIP:
     # The name of ClusterIP service
     name: harbor
@@ -105,7 +106,7 @@ expose:
 # the IP address of k8s node
 #
 # If Harbor is deployed behind the proxy, set it as the URL of proxy
-externalURL: https://core.harbor.domain
+externalURL: https://harbor.10.61.100.30.xip.io
 
 # The internal TLS used for harbor components secure communicating. In order to enable https
 # in each components tls cert files need to provided in advance.
@@ -201,13 +202,13 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
     chartmuseum:
       existingClaim: ""
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
     jobservice:
       existingClaim: ""
       storageClass: ""
@@ -221,7 +222,7 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 2Gi
     # If external Redis is used, the following settings for Redis will
     # be ignored
     redis:
@@ -229,13 +230,13 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 2Gi
     trivy:
       existingClaim: ""
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
   # Define which storage backend is used for registry and chartmuseum to store
   # images and charts. Refer to
   # https://github.com/docker/distribution/blob/master/docs/configuration.md#storage
@@ -375,7 +376,7 @@ proxy:
 nginx:
   image:
     repository: goharbor/nginx-photon
-    tag: v2.1.3
+    tag: dev
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -392,7 +393,7 @@ nginx:
 portal:
   image:
     repository: goharbor/harbor-portal
-    tag: v2.1.3
+    tag: dev
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -409,13 +410,12 @@ portal:
 core:
   image:
     repository: goharbor/harbor-core
-    tag: v2.1.3
+    tag: dev
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
   ## Startup probe values
   startupProbe:
-    enabled: true
     initialDelaySeconds: 10
   # resources:
   #  requests:
@@ -443,7 +443,7 @@ core:
 jobservice:
   image:
     repository: goharbor/harbor-jobservice
-    tag: v2.1.3
+    tag: dev
   replicas: 1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -470,7 +470,7 @@ registry:
   registry:
     image:
       repository: goharbor/registry-photon
-      tag: v2.1.3
+      tag: dev
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -478,7 +478,7 @@ registry:
   controller:
     image:
       repository: goharbor/harbor-registryctl
-      tag: v2.1.3
+      tag: dev
 
     # resources:
     #  requests:
@@ -525,7 +525,7 @@ chartmuseum:
   absoluteUrl: false
   image:
     repository: goharbor/chartmuseum-photon
-    tag: v2.1.3
+    tag: dev
   replicas: 1
   # resources:
   #  requests:
@@ -544,7 +544,7 @@ clair:
   clair:
     image:
       repository: goharbor/clair-photon
-      tag: v2.1.3
+      tag: dev
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -552,7 +552,7 @@ clair:
   adapter:
     image:
       repository: goharbor/clair-adapter-photon
-      tag: v2.1.3
+      tag: dev
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -574,7 +574,7 @@ trivy:
     # repository the repository for Trivy adapter image
     repository: goharbor/trivy-adapter-photon
     # tag the tag for Trivy adapter image
-    tag: v2.1.3
+    tag: dev
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   # replicas the number of Pod replicas
@@ -631,7 +631,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: goharbor/notary-server-photon
-      tag: v2.1.3
+      tag: dev
     replicas: 1
     # resources:
     #  requests:
@@ -642,7 +642,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: goharbor/notary-signer-photon
-      tag: v2.1.3
+      tag: dev
     replicas: 1
     # resources:
     #  requests:
@@ -670,7 +670,7 @@ database:
     serviceAccountName: ""
     image:
       repository: goharbor/harbor-db
-      tag: v2.1.3
+      tag: dev
     # The initial superuser password for internal database
     password: "changeit"
     # resources:
@@ -716,7 +716,7 @@ redis:
     serviceAccountName: ""
     image:
       repository: goharbor/redis-photon
-      tag: v2.1.3
+      tag: dev
     # resources:
     #  requests:
     #    memory: 256Mi
