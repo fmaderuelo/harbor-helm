@@ -28,9 +28,9 @@
 {{- end }}
 
 ---
-{{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.Version }}
+{{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion }}
 apiVersion: extensions/v1beta1
-{{- else if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version }}
+{{- else if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
 apiVersion: networking.k8s.io/v1beta1
 {{- else }}
 apiVersion: networking.k8s.io/v1
@@ -63,7 +63,7 @@ spec:
   rules:
   - http:
       paths:
-{{- if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version }}
+{{- if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
       - path: {{ .portal_path }}
         backend:
           serviceName: {{ template "harbor.portal" . }}
@@ -138,9 +138,9 @@ spec:
 
 {{- if .Values.notary.enabled  }}
 ---
-{{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.Version }}
+{{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion }}
 apiVersion: extensions/v1beta1
-{{- else if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version }}
+{{- else if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
 apiVersion: networking.k8s.io/v1beta1
 {{- else }}
 apiVersion: networking.k8s.io/v1
@@ -171,7 +171,7 @@ spec:
   - http:
       paths:
       - path: {{ .notary_path }}
-{{- if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version }}
+{{- if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
         backend:
           serviceName: {{ template "harbor.notary-server" . }}
           servicePort: 4443
