@@ -35,8 +35,8 @@ expose:
       notarySecretName: ""
   ingress:
     hosts:
-      core: harbor.10.61.100.30.xip.io
-      notary: notary.10.61.100.30.xip.io
+      core: harbor.10.61.1.30.xip.io
+      notary: notary.10.61.1.30.xip.io
     # set to the type of ingress controller if it has specific requirements.
     # leave as `default` for most ingress controllers.
     # set to `gce` if using the GCE ingress controller
@@ -110,7 +110,7 @@ expose:
 # the IP address of k8s node
 #
 # If Harbor is deployed behind the proxy, set it as the URL of proxy
-externalURL: https://harbor.10.61.100.30.xip.io
+externalURL: https://harbor.10.61.1.30.xip.io
 
 # The internal TLS used for harbor components secure communicating. In order to enable https
 # in each components tls cert files need to provided in advance.
